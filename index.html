@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <title>ToDo by Date</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .quote {
+  font-style: italic;
+  font-size: 14px;
+  color: #e0f7e9;
+  margin-left: 20px;
+}
+
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header .social-icons a {
+      color: white;
+      margin-left: 15px;
+      font-size: 20px;
+      text-decoration: none;
+    }
+    .dark-mode {
+  background-color: #222;
+  color: white;
+}
+
+
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 20px;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #333;
+      color: white;
+      padding: 20px;
+      position: fixed;
+      height: 100%;
+      top: 0;
+      left: -220px;
+      transition: left 0.3s;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar li {
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .sidebar li:hover,
+    .sidebar li.active {
+      background-color: #4CAF50;
+    }
+
+    .main {
+      padding: 20px;
+      margin-top: 10px;
+      transition: margin-left 0.3s ease;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      margin-right: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    ul#taskList {
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li.task {
+      background: #f7f7f7;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    li.task input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    .completed span {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div style="display: flex; align-items: center;">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <h1 style="margin: 0;">ToDo by Date</h1>
+    </div>
+    <span class="quote">"Жақсы жоспар – жартылай орындалған жұмыс."</span>
+    <div class="social-icons">
+      <a href="https://t.me/yourprofile" target="_blank"><i class="fab fa-telegram"></i></a>
+      <a href="https://instagram.com/yourprofile" target="_blank"><i class="fab fa-instagram"></i></a>
+      <a href="https://youtube.com/yourchannel" target="_blank"><i class="fab fa-youtube"></i></a>
+    </div>
+    <button onclick="toggleTheme()">🌙</button>
+
+  </header>
+  <div id="progressContainer" style="margin-top: 15px;">
+    <div style="margin-bottom: 5px;">
+      <span id="progressText">Прогресс: 0%</span>
+    </div>
+    <div style="background-color: #ccc; height: 15px; border-radius: 5px;">
+      <div id="progressBar" style="height: 100%; width: 0%; background-color: #4CAF50; border-radius: 5px;"></div>
+    </div>
+  </div>
+  
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <h2>Күндер</h2>
+    <ul id="dateList"></ul>
+    <input type="text" id="newDate" placeholder="Қандай күн">
+    <input type="date" id="datePicker" onchange="addDateFromPicker()">
+
+    <button onclick="addDate()">Қосу</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main" id="mainContent">
+    <h2 id="currentDateTitle">Тапсырмалар жоқ</h2>
+
+    <div id="todoSection" style="display:none;">
+      <input type="text" id="taskInput" placeholder="Жаңа тапсырма...">
+      <button onclick="addTask()">Қосу</button>
+      <ul id="taskList"></ul>
+    </div>
+
+    <footer>
+      © 2025 ToDo Project
+    </footer>
+  </div>
+
+  <script>
+    
+    const sidebar = document.getElementById("sidebar");
+    const dateList = document.getElementById("dateList");
+    const currentDateTitle = document.getElementById("currentDateTitle");
+    const taskList = document.getElementById("taskList");
+    const todoSection = document.getElementById("todoSection");
+
+    let currentDate = null;
+    let data = {};
+
+    function toggleSidebar() {
+      sidebar.classList.toggle("open");
+    }
+    function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+}
+
+
+    function addDate() {
+      const input = document.getElementById("newDate");
+      const date = input.value.trim();
+      if (!date || data[date]) return;
+
+      data[date] = [];
+      const li = document.createElement("li");
+      li.textContent = date;
+      li.onclick = () => selectDate(date, li);
+      dateList.appendChild(li);
+      input.value = "";
+    }
+
+    function selectDate(date, el) {
+      currentDate = date;
+      currentDateTitle.textContent = `Тапсырмалар: ${date}`;
+      todoSection.style.display = "block";
+
+      document.querySelectorAll("#dateList li").forEach(li => li.classList.remove("active"));
+      el.classList.add("active");
+
+      renderTasks();
+    }
+
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const taskText = input.value.trim();
+      if (!taskText || !currentDate) return;
+
+      data[currentDate].push({ text: taskText, done: false });
+      input.value = "";
+      renderTasks();
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      data[currentDate].forEach((task, i) => {
+        const li = document.createElement("li");
+        li.className = "task" + (task.done ? " completed" : "");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.onchange = () => {
+          task.done = checkbox.checked;
+          renderTasks();
+          updateProgress();
+
+        };
+
+        const span = document.createElement("span");
+        span.textContent = task.text;
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        taskList.appendChild(li);
+      });
+    }
+  </script>
+  <script>
+    // Бұрынғы кодтың астына қос:
+    document.addEventListener('click', function (event) {
+      const isClickInsideSidebar = sidebar.contains(event.target);
+      const isMenuBtn = event.target.closest('.menu-toggle');
+  
+      if (!isClickInsideSidebar && !isMenuBtn) {
+        sidebar.classList.remove("open");
+      }
+    });
+    function updateProgress() {
+  if (!currentDate || !data[currentDate]) return;
+
+  const tasks = data[currentDate];
+  const total = tasks.length;
+  const done = tasks.filter(task => task.done).length;
+  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  document.getElementById("progressText").textContent = `Прогресс: ${percent}% (${done}/${total})`;
+  document.getElementById("progressBar").style.width = `${percent}%`;
+}
+
+
+   
+  </script>
+ 
+</body>
+</html>
