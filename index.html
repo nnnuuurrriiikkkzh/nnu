@@ -15,6 +15,14 @@
   color: #e0f7e9;
   margin-left: 20px;
 }
+    .task button {
+  margin-left: 10px;
+  background-color: #888;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
 
 
     header {
@@ -179,7 +187,13 @@
 
     <div id="todoSection" style="display:none;">
       <input type="text" id="taskInput" placeholder="Жаңа тапсырма...">
-      <button onclick="addTask()">Қосу</button>
+<select id="prioritySelect">
+  <option value="high">🔴 Жоғары</option>
+  <option value="medium">🟡 Орташа</option>
+  <option value="low">🟢 Төмен</option>
+</select>
+<button onclick="addTask()">Қосу</button>
+
       <ul id="taskList"></ul>
     </div>
 
@@ -230,32 +244,95 @@
 
       renderTasks();
     }
+    function getPriorityIcon(priority) {
+  if (priority === "high") return "🔴";
+  if (priority === "medium") return "🟡";
+  return "🟢";
+}
 
     function addTask() {
-      const input = document.getElementById("taskInput");
-      const taskText = input.value.trim();
-      if (!taskText || !currentDate) return;
+      function addTask() {
+  const input = document.getElementById("taskInput");
+  const priority = document.getElementById("prioritySelect").value;
+  const taskText = input.value.trim();
+  if (!taskText || !currentDate) return;
 
-      data[currentDate].push({ text: taskText, done: false });
-      input.value = "";
-      renderTasks();
+  data[currentDate].push({
+    text: taskText,
+    done: false,
+    priority: priority,
+    subtasks: []
+  });
+
+  input.value = "";
+  renderTasks();
+}
+
     }
 
     function renderTasks() {
-      taskList.innerHTML = "";
-      data[currentDate].forEach((task, i) => {
-        const li = document.createElement("li");
-        li.className = "task" + (task.done ? " completed" : "");
+  taskList.innerHTML = "";
+  data[currentDate].forEach((task, i) => {
+    const li = document.createElement("li");
+    li.className = "task" + (task.done ? " completed" : "");
 
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = task.done;
-        checkbox.onchange = () => {
-          task.done = checkbox.checked;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = task.done;
+    checkbox.onchange = () => {
+      task.done = checkbox.checked;
+      renderTasks();
+      updateProgress();
+    };
+
+    const span = document.createElement("span");
+    span.innerHTML = `${getPriorityIcon(task.priority)} ${task.text}`;
+
+    // Кнопка добавления подзадачи
+    const subBtn = document.createElement("button");
+    subBtn.textContent = "+";
+    subBtn.style.marginLeft = "10px";
+    subBtn.onclick = () => {
+      const subText = prompt("Подзадача:");
+      if (subText) {
+        task.subtasks.push({ text: subText, done: false });
+        renderTasks();
+      }
+    };
+
+    li.appendChild(checkbox);
+    li.appendChild(span);
+    li.appendChild(subBtn);
+
+    // Рендер подзадач
+    if (task.subtasks) {
+      const ul = document.createElement("ul");
+      ul.style.marginTop = "5px";
+      ul.style.marginLeft = "25px";
+      task.subtasks.forEach((sub, j) => {
+        const subLi = document.createElement("li");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = sub.done;
+        cb.onchange = () => {
+          sub.done = cb.checked;
           renderTasks();
-          updateProgress();
-
         };
+        const txt = document.createElement("span");
+        txt.textContent = sub.text;
+        if (sub.done) txt.style.textDecoration = "line-through";
+
+        subLi.appendChild(cb);
+        subLi.appendChild(txt);
+        ul.appendChild(subLi);
+      });
+      li.appendChild(ul);
+    }
+
+    taskList.appendChild(li);
+  });
+}
+
 
         const span = document.createElement("span");
         span.textContent = task.text;
